@@ -114,16 +114,6 @@ namespace BridgeBot.Services
             {
                 fileId = update.Message.Document.FileId;
             }
-            else if (update.Message.Audio != null) // Добавили обработку музыкальных треков
-            {
-                fileId = update.Message.Audio.FileId;
-            }
-            else if (update.Message.Voice != null) // Добавили обработку голосовых на всякий случай
-            {
-                fileId = update.Message.Voice.FileId;
-            }
-
-
 
             if (fileId != null)
             {
