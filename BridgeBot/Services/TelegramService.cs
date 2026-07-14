@@ -100,20 +100,29 @@ namespace BridgeBot.Services
 
             if (update.Message.Photo != null)
             {
-                    fileId = update.Message.Photo.Last().FileId;
+                fileId = update.Message.Photo.Last().FileId;
             }
             else if (update.Message.Video != null)
             {
-                    fileId = update.Message.Video.FileId;
+                fileId = update.Message.Video.FileId;
             }
             else if (update.Message.Animation != null)
             {
-                    fileId = update.Message.Animation.FileId;
+                fileId = update.Message.Animation.FileId;
             }
             else if (update.Message.Document != null)
             {
-                    fileId = update.Message.Document.FileId;
+                fileId = update.Message.Document.FileId;
             }
+            else if (update.Message.Audio != null) // Добавили обработку музыкальных треков
+            {
+                fileId = update.Message.Audio.FileId;
+            }
+            else if (update.Message.Voice != null) // Добавили обработку голосовых на всякий случай
+            {
+                fileId = update.Message.Voice.FileId;
+            }
+
 
 
             if (fileId != null)
