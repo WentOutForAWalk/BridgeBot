@@ -1,8 +1,10 @@
-﻿using BridgeBot.Infrastructure;
+using BridgeBot.Infrastructure;
 using BridgeBot.Models;
 using BridgeBot.Services;
 using Microsoft.Extensions.Hosting;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BridgeBot.Workers
 {
@@ -23,34 +25,48 @@ namespace BridgeBot.Workers
 
             try
             {
-        
                 await foreach (var message in _messageBus.ReadAllAsync(stoppingToken))
                 {
-                    if (message.Text != null)
+                    Console.WriteLine($"[WORKER LOG]: Получено сообщение от {message.UserName} (ID: {message.ChatId}) для обработки.");
+
+                    try
                     {
-                        _discord.SendBridgeMessageAsync(message);
+                        // 1. Если это текстовое сообщение
+                        if (message.Text != null)
+                        {
+                            await _discord.SendBridgeMessageAsync(message);
+                        }
+                        // 2. Если это медиафайл (картинка, гифка, видео, аудио)
+                        else if (message.FileURL != null)
+                        {
+                            await _discord.SendBridgeFileAsync(message);
+                        }
+
+                        // Если всё ушло успешно, выводим логи в консоль
+                        Console.WriteLine($"[WORKER LOG]: Сообщение успешно обработано и отправлено в Discord!");
+                        Console.WriteLine($" Текст: {message.Text}");
+                        if (message.AvatarUrl != null)
+                        {
+                            Console.WriteLine($" AvatarUrl : {message.AvatarUrl}");
+                        }
                     }
-                    else if (message.FileURL != null) { 
-                        _discord.SendBridgeFileAsync(message);
+                    catch (Exception ex)
+                    {
+                        // Если ByeDPI отвалился и выдал ошибку туннеля — ловим её здесь
+                        Console.WriteLine($"[Discord Error]: {ex.Message}. Ошибка отправки через ByeDPI. Возвращаю сообщение в шину...");
+
+                        // Возвращаем сообщение обратно в твою очередь (в трубу)
+                        _messageBus.Push(message);
+
+                        // Асинхронно ждем 2 секунды, чтобы локальный ByeDPI оклемался и пробил туннель
+                        await Task.Delay(2000, stoppingToken);
                     }
-                                        
-
-
-                    Console.WriteLine($"[WORKER LOG]: Получено сообщение!");
-                    Console.WriteLine($"   От кого: {message.UserName} (ID: {message.ChatId})");
-                    Console.WriteLine($"   Текст: {message.Text}");
-                    if (message.AvatarUrl != null){ Console.WriteLine($"   AvatarUrl : {message.AvatarUrl}"); }
-
-
                 }
             }
             catch (Exception ex)
             {
-               
                 Console.WriteLine($"[CRITICAL ERROR]: В работе воркера произошел сбой: {ex.Message}");
             }
         }
     }
-
 }
-
